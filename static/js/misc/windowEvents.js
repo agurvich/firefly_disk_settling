@@ -1,6 +1,7 @@
 function fullscreen(){
 	THREEx.FullScreen.request()
-	document.getElementById("fullScreenButton").style.display = "none";//visibility = "hidden"
+	// ABG: Let's not hide the button because it breaks the height of the UI. It's fine the way it is.
+	//document.getElementById("fullScreenButton").style.display = "none";//visibility = "hidden"
 }
 
 if (document.addEventListener){
@@ -110,22 +111,24 @@ function hideSleep(){
 }
 
 function changeSnapSizes(){
-	if (viewerParams.haveUI){
-		//size of the snapshot (from text input)
-		var oldW = 0+viewerParams.renderWidth;
-		var oldH = 0+viewerParams.renderHeight;
+	if (typeof viewerParams !== 'undefined') {
+		if (viewerParams.haveUI){
+			//size of the snapshot (from text input)
+			var oldW = 0+viewerParams.renderWidth;
+			var oldH = 0+viewerParams.renderHeight;
 
-		viewerParams.renderWidth = window.innerWidth;
-		viewerParams.renderHeight = window.innerHeight;
+			viewerParams.renderWidth = window.innerWidth;
+			viewerParams.renderHeight = window.innerHeight;
 
-		if (oldW != viewerParams.renderWidth || oldH != viewerParams.renderHeight){
-			var forGUI = [];
-			forGUI.push({'setGUIParamByKey':[viewerParams.renderWidth, 'renderWidth']});
-			forGUI.push({'setGUIParamByKey':[viewerParams.renderHeight, 'renderHeight'] });
+			if (oldW != viewerParams.renderWidth || oldH != viewerParams.renderHeight){
+				var forGUI = [];
+				forGUI.push({'setGUIParamByKey':[viewerParams.renderWidth, 'renderWidth']});
+				forGUI.push({'setGUIParamByKey':[viewerParams.renderHeight, 'renderHeight'] });
 
-			forGUI.push({'changeUISnapSizes':null});
+				forGUI.push({'changeUISnapSizes':null});
 
-			sendToGUI(forGUI);
+				sendToGUI(forGUI);
+			}
 		}
 	}
 }

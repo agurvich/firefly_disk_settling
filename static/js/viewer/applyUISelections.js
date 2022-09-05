@@ -340,17 +340,21 @@ function checkText(args){
 	var cameraRotation = new THREE.Vector3(viewerParams.camera.rotation.x, viewerParams.camera.rotation.y, viewerParams.camera.rotation.z);
 
 	if (id == "CenterXText") viewerParams.center.x = parseFloat(value);
-	if (id == "CenterYText") viewerParams.center.y = parseFloat(value);
-	if (id == "CenterZText") viewerParams.center.z = parseFloat(value);
-	if (id == "CameraXText") cameraPosition.x = parseFloat(value) - viewerParams.center.x;
-	if (id == "CameraYText") cameraPosition.y = parseFloat(value) - viewerParams.center.y
-	if (id == "CameraZText") cameraPosition.z = parseFloat(value) - viewerParams.center.z;
-	if (id == "RotXText") cameraRotation.x = parseFloat(value)
-	if (id == "RotYText") cameraRotation.y = parseFloat(value)
-	if (id == "RotZText") cameraRotation.z = parseFloat(value)
-	if (id == "RenderXText") viewerParams.renderWidth = parseInt(value);
-	if (id == "RenderYText") viewerParams.renderHeight = parseInt(value);
-	if (id == "RenderYText") viewerParams.renderHeight = parseInt(value);
+	else if (id == "CenterYText") viewerParams.center.y = parseFloat(value);
+	else if (id == "CenterZText") viewerParams.center.z = parseFloat(value);
+	else if (id == "CameraXText") cameraPosition.x = parseFloat(value) - viewerParams.center.x;
+	else if (id == "CameraYText") cameraPosition.y = parseFloat(value) - viewerParams.center.y
+	else if (id == "CameraZText") cameraPosition.z = parseFloat(value) - viewerParams.center.z;
+	else if (id == "RotXText") cameraRotation.x = parseFloat(value)
+	else if (id == "RotYText") cameraRotation.y = parseFloat(value)
+	else if (id == "RotZText") cameraRotation.z = parseFloat(value)
+	else if (id == "RenderXText") viewerParams.renderWidth = parseInt(value);
+	else if (id == "RenderYText") viewerParams.renderHeight = parseInt(value);
+	else if (id == "VideoCapture_duration") viewerParams.VideoCapture_duration = parseFloat(value);
+	else if (id == "VideoCapture_FPS") viewerParams.VideoCapture_FPS = parseInt(value);
+	else if (id == "VideoCapture_format") viewerParams.VideoCapture_format = parseInt(value);
+	else if (id == "VideoCapture_filename") viewerParams.VideoCapture_filename = value;
+	else console.log(id,'not recognized in applyUISelections.js:checkText');
 
 	if (p){
 		if (id == p+'velAnimateDt') {
@@ -406,12 +410,12 @@ function renderImage() {
 //best to use Firefox to render images  
 	var imgData, imgNode;
 	var strDownloadMime = "image/octet-stream";
-	var strMime = "image/png";
+	// can't use viewerParams.VideoCapture_formats b.c. it needs jpEg not jpg
 	var screenWidth = window.innerWidth;
 	var screenHeight = window.innerHeight;
 	var aspect = screenWidth / screenHeight;
 
-
+	viewerParams.imageCaptureClicked = true;
 
 
 	try {
@@ -420,25 +424,63 @@ function renderImage() {
 		viewerParams.renderer.setSize(viewerParams.renderWidth, viewerParams.renderHeight);
 		viewerParams.camera.aspect = viewerParams.renderWidth / viewerParams.renderHeight;
 		viewerParams.camera.updateProjectionMatrix();
-		viewerParams.renderer.render( viewerParams.scene, viewerParams.camera );
+		if (viewerParams.columnDensity){
+			viewerParams.renderer.render( viewerParams.sceneCD, viewerParams.cameraCD );
+		} else {
+			viewerParams.renderer.render( viewerParams.scene, viewerParams.camera );
+		}
 
 		//save image
-		imgData = viewerParams.renderer.domElement.toDataURL(strMime);
+		var extension = viewerParams.VideoCapture_formats[viewerParams.VideoCapture_format]
+		if (extension == '.jpg'){
+			var strMime = "image/jpeg"
+			imgData = viewerParams.renderer.domElement.toDataURL(strMime,1.0);
+		}
+		// gif is not supported so we have to cheat a bit
+		else if (extension == '.gif'){
+			recordVideo(1, 1);
+			return
+		}
+		else {
+			var strMime = "image/png"
+			imgData = viewerParams.renderer.domElement.toDataURL(strMime)
+		}
 
-		saveFile(imgData.replace(strMime, strDownloadMime), "image.png");
+		var fname = viewerParams.VideoCapture_filename + extension;
+		saveFile(imgData.replace(strMime, strDownloadMime),fname);
 
 
 		//back to original size
 		viewerParams.renderer.setSize(screenWidth, screenHeight);
 		viewerParams.camera.aspect = aspect;
 		viewerParams.camera.updateProjectionMatrix();
-		viewerParams.renderer.render( viewerParams.scene, viewerParams.camera );
+
 
 	} catch (e) {
 		console.log(e);
 		return;
 	}
 
+
+}
+
+function recordVideo(fps = null, duration = null){
+
+	if (!fps) fps = viewerParams.VideoCapture_FPS;
+	if (!duration) duration = viewerParams.VideoCapture_duration;
+
+	viewerParams.captureCanvas = true;
+	viewerParams.capturer = new CCapture( { 
+		format: viewerParams.VideoCapture_formats[viewerParams.VideoCapture_format].slice(1), 
+		workersPath: 'static/lib/CCapture/',
+		framerate: fps,
+		name: viewerParams.VideoCapture_filename,
+		timeLimit: duration,
+		autoSaveTime: duration,
+		verbose: true,
+	} );
+
+	viewerParams.capturer.start()
 
 }
 
